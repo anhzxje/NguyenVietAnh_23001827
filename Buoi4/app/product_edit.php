@@ -42,26 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $price    = trim($_POST['price'] ?? '');
     $quantity = trim($_POST['quantity'] ?? '');
 
-    // 1. Kiểm tra Tên sản phẩm: Không được rỗng
-    if ($name === '') {
-        $errors['name'] = 'Tên sản phẩm không được để trống.';
-    } elseif (mb_strlen($name) > 100) {
-        $errors['name'] = 'Tên sản phẩm không được vượt quá 100 ký tự.';
-    }
-
-    // 2. Kiểm tra Giá: Giá > 0
-    if ($price === '') {
-        $errors['price'] = 'Vui lòng nhập giá sản phẩm.';
-    } elseif (!is_numeric($price) || (float)$price <= 0) {
-        $errors['price'] = 'Giá sản phẩm phải là số hợp lệ và lớn hơn 0.';
-    }
-
-    // 3. Kiểm tra Số lượng: Số lượng >= 0
-    if ($quantity === '') {
-        $errors['quantity'] = 'Vui lòng nhập số lượng sản phẩm.';
-    } elseif (!is_numeric($quantity) || (int)$quantity < 0 || (int)$quantity != (float)$quantity) {
-        $errors['quantity'] = 'Số lượng phải là số nguyên không âm (>= 0).';
-    }
+    // Sử dụng hàm kiểm tra dữ liệu dùng chung (có giới hạn max cho price và quantity)
+    $errors = validateProductData($name, $price, $quantity);
 
     // Nếu dữ liệu hợp lệ thì thực hiện cập nhật
     if (empty($errors)) {
@@ -134,6 +116,7 @@ require_once __DIR__ . '/view/header.php';
                    name="price" 
                    step="any"
                    min="0.01"
+                   max="99999999.99"
                    class="form-input <?= isset($errors['price']) ? 'is-invalid' : '' ?>" 
                    placeholder="Nhập giá sản phẩm" 
                    value="<?= htmlspecialchars((string)$price) ?>" 
@@ -141,7 +124,7 @@ require_once __DIR__ . '/view/header.php';
             <?php if (isset($errors['price'])): ?>
                 <span class="error-text"><?= htmlspecialchars($errors['price']) ?></span>
             <?php else: ?>
-                <span class="form-hint">Giá bán phải là số dương lớn hơn 0.</span>
+                <span class="form-hint">Giá bán từ 0.01 đến tối đa 99.999.999,99 VNĐ.</span>
             <?php endif; ?>
         </div>
 
@@ -155,6 +138,7 @@ require_once __DIR__ . '/view/header.php';
                    name="quantity" 
                    step="1"
                    min="0"
+                   max="2147483647"
                    class="form-input <?= isset($errors['quantity']) ? 'is-invalid' : '' ?>" 
                    placeholder="Nhập số lượng sản phẩm" 
                    value="<?= htmlspecialchars((string)$quantity) ?>" 
@@ -162,7 +146,7 @@ require_once __DIR__ . '/view/header.php';
             <?php if (isset($errors['quantity'])): ?>
                 <span class="error-text"><?= htmlspecialchars($errors['quantity']) ?></span>
             <?php else: ?>
-                <span class="form-hint">Số lượng phải là số nguyên lớn hơn hoặc bằng 0.</span>
+                <span class="form-hint">Số lượng là số nguyên từ 0 đến tối đa 2.147.483.647.</span>
             <?php endif; ?>
         </div>
 

@@ -12,7 +12,5 @@
 ### Bước 3: Truy cập ứng dụng
 Truy cập qua trình duyệt theo đường dẫn:
 ```text
-http://localhost/NguyenVietAnh_23001827/app/
-hoặc
 http://localhost/NguyenVietAnh_23001827/Buoi4/app/
 ```

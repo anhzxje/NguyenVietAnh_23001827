@@ -9,7 +9,7 @@ require_once __DIR__ . '/model/product.php';
 
 $pageTitle = 'Xóa sản phẩm - Quản lý giỏ hàng';
 $id        = $_GET['id'] ?? $_POST['id'] ?? null;
-$confirm   = $_POST['confirm'] ?? $_GET['confirm'] ?? null;
+$confirm   = $_POST['confirm'] ?? null;
 
 // Kiểm tra ID hợp lệ
 if (!$id || !is_numeric($id)) {
@@ -44,8 +44,8 @@ if (!$product) {
     exit;
 }
 
-// Nếu đã xác nhận xóa (qua POST form xác nhận hoặc GET confirm=1)
-if ($confirm === '1' || $confirm === 'yes') {
+// Chỉ thực hiện xóa khi có yêu cầu POST và xác nhận confirm === 'yes'
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $confirm === 'yes') {
     $result = deleteProduct((int)$id);
     if ($result) {
         header('Location: product_list.php?status=deleted');

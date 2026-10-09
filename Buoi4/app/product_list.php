@@ -91,9 +91,8 @@ require_once __DIR__ . '/view/header.php';
                                        title="Chỉnh sửa sản phẩm">
                                         Sửa
                                     </a>
-                                    <a href="product_delete.php?id=<?= urlencode($product['id']) ?>&confirm=1" 
+                                    <a href="product_delete.php?id=<?= urlencode($product['id']) ?>" 
                                        class="btn btn-sm btn-delete" 
-                                       onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm \'<?= htmlspecialchars(addslashes($product['name'])) ?>\' (ID: <?= $product['id'] ?>) không?');"
                                        title="Xóa sản phẩm">
                                         Xóa
                                     </a>

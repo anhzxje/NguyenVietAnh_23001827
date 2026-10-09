@@ -107,3 +107,42 @@ function deleteProduct($id) {
         return false;
     }
 }
+
+/**
+ * Kiểm tra tính hợp lệ của dữ liệu sản phẩm (dùng chung cho thêm và sửa)
+ * @param string $name Tên sản phẩm
+ * @param string|float $price Giá sản phẩm
+ * @param string|int $quantity Số lượng sản phẩm
+ * @return array Mảng chứa các lỗi phát hiện (rỗng nếu hợp lệ)
+ */
+function validateProductData($name, $price, $quantity) {
+    $errors = [];
+
+    // 1. Kiểm tra Tên sản phẩm
+    if ($name === '') {
+        $errors['name'] = 'Tên sản phẩm không được để trống.';
+    } elseif (mb_strlen($name) > 100) {
+        $errors['name'] = 'Tên sản phẩm không được vượt quá 100 ký tự.';
+    }
+
+    // 2. Kiểm tra Giá sản phẩm: lớn hơn 0 và không vượt quá giới hạn DECIMAL(10,2) là 99.999.999,99
+    if ($price === '') {
+        $errors['price'] = 'Vui lòng nhập giá sản phẩm.';
+    } elseif (!is_numeric($price) || (float)$price <= 0) {
+        $errors['price'] = 'Giá sản phẩm phải là số hợp lệ và lớn hơn 0.';
+    } elseif ((float)$price > 99999999.99) {
+        $errors['price'] = 'Giá sản phẩm không được vượt quá 99.999.999,99 VNĐ.';
+    }
+
+    // 3. Kiểm tra Số lượng: số nguyên không âm và không vượt quá giới hạn INT là 2.147.483.647
+    if ($quantity === '') {
+        $errors['quantity'] = 'Vui lòng nhập số lượng sản phẩm.';
+    } elseif (!is_numeric($quantity) || (int)$quantity < 0 || (int)$quantity != (float)$quantity) {
+        $errors['quantity'] = 'Số lượng phải là số nguyên không âm (>= 0).';
+    } elseif ((float)$quantity > 2147483647) {
+        $errors['quantity'] = 'Số lượng sản phẩm không được vượt quá 2.147.483.647.';
+    }
+
+    return $errors;
+}
+
