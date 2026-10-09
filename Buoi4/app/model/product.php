@@ -1,0 +1,109 @@
+<?php
+/**
+ * Model Product: Chứa các hàm truy vấn database cho bảng products
+ * Bài tập tuần 4: Quản lý giỏ hàng
+ * Sinh viên: Nguyễn Việt Anh - 23001827
+ */
+
+require_once __DIR__ . '/../common/dbConnect.php';
+
+/**
+ * Lấy danh sách tất cả sản phẩm
+ * @return array Mảng danh sách sản phẩm (mới nhất lên đầu)
+ */
+function getAllProducts() {
+    global $conn;
+    try {
+        $sql = "SELECT * FROM products ORDER BY id ASC";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    } catch (PDOException $e) {
+        error_log("Lỗi getAllProducts: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Lấy thông tin 1 sản phẩm theo ID
+ * @param int|string $id ID sản phẩm cần tìm
+ * @return array|null Trả về mảng thông tin sản phẩm hoặc null nếu không tồn tại
+ */
+function getProductById($id) {
+    global $conn;
+    try {
+        $sql = "SELECT * FROM products WHERE id = :id LIMIT 1";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        $product = $stmt->fetch();
+        return $product ?: null;
+    } catch (PDOException $e) {
+        error_log("Lỗi getProductById: " . $e->getMessage());
+        return null;
+    }
+}
+
+/**
+ * Thêm sản phẩm mới vào CSDL
+ * @param string $name Tên sản phẩm
+ * @param float $price Giá sản phẩm
+ * @param int $quantity Số lượng sản phẩm
+ * @return bool True nếu thêm thành công, False nếu thất bại
+ */
+function addProduct($name, $price, $quantity) {
+    global $conn;
+    try {
+        $sql = "INSERT INTO products (name, price, quantity) VALUES (:name, :price, :quantity)";
+        $stmt = $conn->prepare($sql);
+        return $stmt->execute([
+            ':name'     => $name,
+            ':price'    => $price,
+            ':quantity' => $quantity,
+        ]);
+    } catch (PDOException $e) {
+        error_log("Lỗi addProduct: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Cập nhật thông tin sản phẩm theo ID
+ * @param int|string $id ID sản phẩm cần cập nhật
+ * @param string $name Tên sản phẩm mới
+ * @param float $price Giá sản phẩm mới
+ * @param int $quantity Số lượng mới
+ * @return bool True nếu cập nhật thành công, False nếu thất bại
+ */
+function updateProduct($id, $name, $price, $quantity) {
+    global $conn;
+    try {
+        $sql = "UPDATE products SET name = :name, price = :price, quantity = :quantity WHERE id = :id";
+        $stmt = $conn->prepare($sql);
+        return $stmt->execute([
+            ':name'     => $name,
+            ':price'    => $price,
+            ':quantity' => $quantity,
+            ':id'       => $id,
+        ]);
+    } catch (PDOException $e) {
+        error_log("Lỗi updateProduct: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Xóa sản phẩm khỏi CSDL theo ID
+ * @param int|string $id ID sản phẩm cần xóa
+ * @return bool True nếu xóa thành công, False nếu thất bại
+ */
+function deleteProduct($id) {
+    global $conn;
+    try {
+        $sql = "DELETE FROM products WHERE id = :id";
+        $stmt = $conn->prepare($sql);
+        return $stmt->execute([':id' => $id]);
+    } catch (PDOException $e) {
+        error_log("Lỗi deleteProduct: " . $e->getMessage());
+        return false;
+    }
+}
