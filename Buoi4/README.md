@@ -1,11 +1,3 @@
-# BÀI TẬP TUẦN 4: THỰC HÀNH PHP + MYSQL – QUẢN LÝ GIỎ HÀNG
-
-- **Họ và tên:** Nguyễn Việt Anh
-- **Mã sinh viên:** 23001827
-- **Lớp / Học phần:** Lập trình Web PHP + MySQL
-
----
-
 ## Hướng dẫn cài đặt & Chạy ứng dụng
 
 ### Bước 1: Khởi động MySQL & Apache trong XAMPP
