@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài 2 - Đặt vé xem phim</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.js" defer></script>
+    <script src="bai2.js" defer></script>
+</head>
+<body>
+    <main id="app" v-cloak>
+        <nav class="exercise-nav" aria-label="Bài thực hành">
+            <a href="Bai1.html"><span>Bài 1</span>Thông tin sinh viên</a>
+            <a href="Bai2.html" aria-current="page"><span>Bài 2</span>Đặt vé xem phim</a>
+            <a href="Bai3.html"><span>Bài 3</span>Quản lý công việc</a>
+        </nav>
+        <header>
+            <p class="eyebrow">BÀI THỰC HÀNH 06 · VUEJS</p>
+            <h1>Đặt vé xem phim</h1>
+            <p>Chọn suất chiếu yêu thích và chuẩn bị cho một buổi xem phim.</p>
+        </header>
+        <div class="layout booking-layout">
+            <section class="card editor" aria-labelledby="booking-heading">
+                <p class="eyebrow">THÔNG TIN ĐẶT VÉ</p>
+                <h2 id="booking-heading">Buổi xem phim của bạn</h2>
+                <form class="booking-form" @submit.prevent="datVe" @reset.prevent="datLai">
+                    <label for="ho-ten">Họ tên khách hàng
+                        <input id="ho-ten" v-model.trim="hoTen" type="text" autocomplete="name" placeholder="Nhập họ và tên" required>
+                    </label>
+                    <label for="suat-chieu">Suất chiếu
+                        <select id="suat-chieu" v-model="suatChieu">
+                            <option v-for="suat in cacSuatChieu" :key="suat" :value="suat">{{ suat }}</option>
+                        </select>
+                    </label>
+                    <fieldset>
+                        <legend>Loại vé</legend>
+                        <div class="ticket-options">
+                            <label class="choice" :class="{ selected: loaiVe === 'thuong' }">
+                                <input v-model="loaiVe" type="radio" name="loai-ve" value="thuong">
+                                <span>Vé thường<small>70.000 đồng</small></span>
+                            </label>
+                            <label class="choice" :class="{ selected: loaiVe === 'vip' }">
+                                <input v-model="loaiVe" type="radio" name="loai-ve" value="vip">
+                                <span>Vé VIP<small>100.000 đồng</small></span>
+                            </label>
+                        </div>
+                    </fieldset>
+                    <div>
+                        <label for="so-luong">Số lượng vé</label>
+                        <div class="quantity-control">
+                            <button type="button" @click="giamSoLuong" :disabled="!soLuongHopLe || soLuong <= 1" aria-label="Giảm số lượng vé">−</button>
+                            <input id="so-luong" v-model.number="soLuong" type="number" min="1" max="10" step="1" required
+                                   :aria-invalid="!soLuongHopLe" aria-describedby="quantity-hint">
+                            <button type="button" @click="tangSoLuong" :disabled="!soLuongHopLe || soLuong >= 10" aria-label="Tăng số lượng vé">+</button>
+                        </div>
+                        <p id="quantity-hint" class="field-hint" :class="{ error: !soLuongHopLe }">Chỉ chấp nhận số nguyên từ 1 đến 10.</p>
+                    </div>
+                    <label class="checkbox combo-choice"><input v-model="coCombo" type="checkbox"><span>Thêm combo bắp nước<small>45.000 đồng / đơn đặt vé</small></span></label>
+                    <div class="actions">
+                        <button class="button primary" type="submit" :disabled="!coTheDatVe">Đặt vé</button>
+                        <button class="button secondary" type="reset">Đặt lại form</button>
+                    </div>
+                </form>
+            </section>
+            <aside class="booking-sidebar">
+                <section class="card" aria-labelledby="movie-heading">
+                    <div class="movie-cover"><span class="eyebrow">PHIM ĐƯỢC CHỌN</span><span class="movie-art" aria-hidden="true">✦</span><h2 id="movie-heading">{{ tenPhim }}</h2><p>Hoạt hình · Phiêu lưu · 100 phút</p></div>
+                    <div class="summary-content">
+                        <h2>Tóm tắt đơn vé</h2>
+                        <dl>
+                            <div><dt>Suất chiếu</dt><dd>{{ suatChieu }}</dd></div>
+                            <div><dt>{{ loaiVe === 'vip' ? 'Vé VIP' : 'Vé thường' }}</dt><dd>{{ dinhDangTien(giaVe) }} × {{ soLuongHopLe ? soLuong : '—' }}</dd></div>
+                            <div><dt>Combo bắp nước</dt><dd>{{ dinhDangTien(tienCombo) }}</dd></div>
+                        </dl>
+                        <div class="total" aria-live="polite"><span>Tổng tiền</span><strong>{{ soLuongHopLe ? dinhDangTien(tongTien) : '—' }}</strong></div>
+                        <p class="field-hint">Combo được tính một lần cho mỗi đơn.</p>
+                    </div>
+                </section>
+                <section v-if="xacNhan" class="card confirmation" role="status" aria-labelledby="confirmation-heading">
+                    <p class="eyebrow">ĐÃ GHI NHẬN</p><h2 id="confirmation-heading">Đặt vé thành công!</h2>
+                    <p>Cảm ơn <strong>{{ xacNhan.hoTen }}</strong>. Thông tin đơn vé của bạn:</p>
+                    <dl>
+                        <div><dt>Phim</dt><dd>{{ xacNhan.tenPhim }}</dd></div>
+                        <div><dt>Suất chiếu</dt><dd>{{ xacNhan.suatChieu }}</dd></div>
+                        <div><dt>Vé</dt><dd>{{ xacNhan.soLuong }} {{ xacNhan.loaiVe }}</dd></div>
+                        <div><dt>Combo</dt><dd>{{ xacNhan.coCombo ? 'Có' : 'Không' }}</dd></div>
+                        <div><dt>Tổng tiền</dt><dd>{{ dinhDangTien(xacNhan.tongTien) }}</dd></div>
+                    </dl>
+                </section>
+            </aside>
+        </div>
+        <footer class="footnote">Bài thực hành VueJS · Dữ liệu dùng để thực hành và không được lưu khi tải lại trang.</footer>
+    </main>
+    <noscript>Vui lòng bật JavaScript để chạy bài thực hành VueJS.</noscript>
+</body>
+</html>

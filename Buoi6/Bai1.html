@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài 1 - Thẻ thông tin sinh viên</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.js" defer></script>
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <main id="app" v-cloak>
+        <nav class="exercise-nav" aria-label="Bài thực hành">
+            <a href="Bai1.html" aria-current="page"><span>Bài 1</span>Thông tin sinh viên</a>
+            <a href="Bai2.html"><span>Bài 2</span>Đặt vé xem phim</a>
+            <a href="Bai3.html"><span>Bài 3</span>Quản lý công việc</a>
+        </nav>
+        <header>
+            <p class="eyebrow">BÀI THỰC HÀNH 06 · VUEJS</p>
+            <h1>Thẻ thông tin sinh viên</h1>
+            <p>Chỉnh sửa thông tin và xem thẻ sinh viên cập nhật ngay lập tức.</p>
+        </header>
+
+        <div class="layout">
+            <section class="card student-card" aria-label="Thông tin sinh viên">
+                <div class="card-banner"><span>HỒ SƠ SINH VIÊN</span><span>01</span></div>
+                <div class="card-content">
+                    <!-- v-bind gắn đường dẫn ảnh và nội dung thay thế. -->
+                    <img class="avatar" v-bind:src="sinhVien.anhDaiDien || 'avatar.svg'"
+                         v-bind:alt="'Ảnh đại diện của ' + sinhVien.hoTen" @error="dungAnhMacDinh">
+                    <!-- Nội suy {{ }} và v-text. -->
+                    <h2>{{ sinhVien.hoTen }}</h2>
+                    <p class="student-id">Mã sinh viên · {{ sinhVien.maSinhVien }}</p>
+                    <dl>
+                        <div><dt>Lớp</dt><dd v-text="sinhVien.lop"></dd></div>
+                        <div><dt>Trạng thái</dt><dd>
+                            <span class="status" :class="{ inactive: !sinhVien.dangHoc }">
+                                <span v-if="sinhVien.dangHoc">● Đang học</span>
+                                <span v-else>● Đã nghỉ</span>
+                            </span>
+                        </dd></div>
+                    </dl>
+                    <div class="grade-panel" :class="mauXepLoai" aria-live="polite">
+                        <div><span class="grade-label">ĐIỂM TRUNG BÌNH</span>
+                            <p class="score">{{ diemHopLe ? sinhVien.diemTrungBinh : '—' }}<small> / 10</small></p>
+                        </div>
+                        <!-- Các nhánh v-if xử lý đúng những mốc xếp loại. -->
+                        <strong v-if="!diemHopLe">Chưa có điểm hợp lệ</strong>
+                        <strong v-else-if="sinhVien.diemTrungBinh >= 8">Giỏi</strong>
+                        <strong v-else-if="sinhVien.diemTrungBinh >= 6.5">Khá</strong>
+                        <strong v-else-if="sinhVien.diemTrungBinh >= 5">Trung bình</strong>
+                        <strong v-else>Chưa đạt</strong>
+                    </div>
+                    <button class="toggle" type="button" @click="hienGioiThieu = !hienGioiThieu"
+                            :aria-expanded="hienGioiThieu" aria-controls="gioi-thieu">
+                        {{ hienGioiThieu ? 'Ẩn giới thiệu' : 'Hiện giới thiệu' }}
+                        <span aria-hidden="true">{{ hienGioiThieu ? '−' : '+' }}</span>
+                    </button>
+                    <!-- v-show giữ phần tử trong DOM và bật/tắt hiển thị. -->
+                    <p id="gioi-thieu" class="intro" v-show="hienGioiThieu">{{ sinhVien.gioiThieu }}</p>
+                </div>
+            </section>
+
+            <section class="card editor" aria-labelledby="editor-heading">
+                <p class="eyebrow">THỬ THAY ĐỔI DỮ LIỆU</p>
+                <h2 id="editor-heading">Thông tin của bạn</h2>
+                <p class="hint">Xem trước thay đổi trên thẻ, rồi nhấn “Lưu thông tin” để giữ lại.</p>
+                <form class="form-grid" @submit.prevent="luuThongTin">
+                    <label>Mã sinh viên<input v-model="sinhVien.maSinhVien" type="text" required></label>
+                    <label>Lớp<input v-model="sinhVien.lop" type="text" required></label>
+                    <label class="full">Họ và tên<input v-model="sinhVien.hoTen" type="text" required></label>
+                    <label class="full">Đường dẫn ảnh đại diện<input v-model="sinhVien.anhDaiDien" type="text" placeholder="avatar.svg hoặc https://…"></label>
+                    <label class="full">Điểm trung bình (0–10)
+                        <input v-model.number="sinhVien.diemTrungBinh" type="number" min="0" max="10" step="any" required
+                               :aria-invalid="!diemHopLe" aria-describedby="diem-hint">
+                    </label>
+                    <p id="diem-hint" class="hint full" :class="{ error: !diemHopLe }">
+                        {{ diemHopLe ? 'Giỏi: 8–10 · Khá: 6,5–<8 · Trung bình: 5–<6,5 · Chưa đạt: <5' : 'Vui lòng nhập điểm từ 0 đến 10.' }}
+                    </p>
+                    <label class="checkbox full"><input v-model="sinhVien.dangHoc" type="checkbox">Sinh viên đang học</label>
+                    <label class="full">Giới thiệu<textarea v-model="sinhVien.gioiThieu" rows="3"></textarea></label>
+                    <div class="full actions">
+                        <button class="button primary" type="submit" :disabled="!coTheLuu">Lưu thông tin</button>
+                    </div>
+                    <p class="full save-status" :class="{ error: loiLuu, saved: !loiLuu && !coThayDoi }" role="status">
+                        {{ loiLuu || (coThayDoi ? 'Thông tin hiện tại chưa được lưu.' : 'Đã lưu thông tin trên trình duyệt này.') }}
+                    </p>
+                </form>
+            </section>
+        </div>
+        <footer class="footnote">Bài thực hành VueJS · Thông tin được lưu trên trình duyệt này khi nhấn “Lưu thông tin”.</footer>
+    </main>
+    <noscript>Vui lòng bật JavaScript để chạy bài thực hành VueJS.</noscript>
+</body>
+</html>

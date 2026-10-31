@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài 3 - Quản lý công việc cá nhân</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.js" defer></script>
+    <script src="bai3.js" defer></script>
+</head>
+<body>
+    <main id="app" v-cloak>
+        <nav class="exercise-nav" aria-label="Bài thực hành">
+            <a href="Bai1.html"><span>Bài 1</span>Thông tin sinh viên</a>
+            <a href="Bai2.html"><span>Bài 2</span>Đặt vé xem phim</a>
+            <a href="Bai3.html" aria-current="page"><span>Bài 3</span>Quản lý công việc</a>
+        </nav>
+        <header>
+            <p class="eyebrow">BÀI THỰC HÀNH 06 · VUEJS</p>
+            <h1>Quản lý công việc cá nhân</h1>
+            <p>Ghi lại công việc, tập trung hoàn thành từng việc một.</p>
+        </header>
+        <section class="task-stats" aria-label="Thống kê công việc" aria-live="polite">
+            <div class="card stat"><span>Tổng công việc</span><strong>{{ tongCongViec }}</strong></div>
+            <div class="card stat"><span>Chưa hoàn thành</span><strong>{{ soViecChuaHoanThanh }}</strong></div>
+            <div class="card stat"><span>Đã hoàn thành</span><strong>{{ soViecDaHoanThanh }}</strong></div>
+        </section>
+        <section class="card task-workspace" aria-labelledby="tasks-heading">
+            <h2 id="tasks-heading">Công việc trong ngày</h2>
+            <!-- Submit bằng nút Thêm hoặc Enter; modifier .prevent ngăn tải lại trang. -->
+            <form class="add-task" @submit.prevent="themCongViec">
+                <label for="ten-cong-viec">Bạn muốn hoàn thành việc gì?
+                    <input id="ten-cong-viec" v-model.trim="tenCongViec" type="text" placeholder="Ví dụ: Hoàn thành bài tập VueJS" autocomplete="off">
+                </label>
+                <button class="button primary" type="submit" :disabled="!tenCongViec.trim()">Thêm</button>
+            </form>
+            <div class="task-toolbar">
+                <div class="filters" role="group" aria-label="Lọc công việc">
+                    <button v-for="luaChon in cacBoLoc" :key="luaChon.giaTri" type="button"
+                            :aria-pressed="boLoc === luaChon.giaTri" :class="{ active: boLoc === luaChon.giaTri }"
+                            @click="boLoc = luaChon.giaTri">{{ luaChon.nhan }}</button>
+                </div>
+                <button class="clear-completed" type="button" @click="xoaDaHoanThanh" :disabled="soViecDaHoanThanh === 0">Xóa các việc đã hoàn thành</button>
+            </div>
+            <ul v-if="congViecDaLoc.length" class="task-list">
+                <li v-for="viec in congViecDaLoc" :key="viec.id" class="task-row" :class="{ completed: viec.hoanThanh }">
+                    <label><input v-model="viec.hoanThanh" type="checkbox"><span class="task-name">{{ viec.ten }}</span></label>
+                    <button class="delete-task" type="button" @click="xoaCongViec(viec.id)" :aria-label="'Xóa công việc: ' + viec.ten">Xóa</button>
+                </li>
+            </ul>
+            <div v-else class="empty-state" role="status">
+                <span class="empty-symbol" aria-hidden="true">✓</span>
+                <h3>{{ tongCongViec === 0 ? 'Bắt đầu ngày mới của bạn' : 'Không có công việc phù hợp' }}</h3>
+                <p v-if="tongCongViec === 0">Danh sách đang trống. Thêm công việc đầu tiên ở phía trên.</p>
+                <p v-else-if="boLoc === 'chua-xong'">Bạn đã hoàn thành tất cả công việc. Thật tuyệt!</p>
+                <p v-else>Chưa có công việc nào đã hoàn thành.</p>
+            </div>
+            <p class="task-footer" aria-live="polite">{{ soViecChuaHoanThanh }} việc chưa hoàn thành / {{ tongCongViec }} công việc</p>
+        </section>
+        <footer class="footnote">Bài thực hành VueJS · Dữ liệu dùng để thực hành và không được lưu khi tải lại trang.</footer>
+    </main>
+    <noscript>Vui lòng bật JavaScript để chạy bài thực hành VueJS.</noscript>
+</body>
+</html>
