@@ -1,0 +1,51 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+function load(file) {
+  let options;
+  const context = { DongGioHang: {}, Vue: { createApp: o => { options = o; return { component() { return this; }, mount() {} }; } }, window: { confirm: () => true } };
+  vm.runInNewContext(fs.readFileSync(__dirname + '/' + file, 'utf8'), context);
+  return options;
+}
+const one = load('bai1.js');
+const s = one.data(); Object.assign(s, one.methods);
+Object.defineProperty(s, 'sanPhamHienThi', { get: () => one.computed.sanPhamHienThi.call(s) });
+s.tuKhoa = 'BÚT'; s.danhMucLoc = 'Văn phòng phẩm'; s.sapXep = 'giam';
+assert.equal(s.sanPhamHienThi.length, 2);
+assert.ok(s.sanPhamHienThi[0].gia >= s.sanPhamHienThi[1].gia);
+assert.equal(s.sanPham[0].id, 1);
+s.tuKhoa = 'không tồn tại'; assert.equal(s.sanPhamHienThi.length, 0);
+assert.equal(one.computed.tongGiaTri.call(s), 0);
+s.moi = { ten: ' ', gia: 1, danhMuc: 'Khác', ton: 0 }; s.themSanPham(); assert.equal(s.sanPham.length, 6);
+s.moi = { ten: '  BÚT BI XANH ', gia: 10000, danhMuc: 'Mới', ton: 1 }; s.themSanPham();
+assert.equal(s.sanPham.length, 6, 'Không thêm tên trùng dù khác chữ hoa và khoảng trắng');
+assert.ok(s.loi);
+s.moi = { ten: 'Sản phẩm mới', gia: 25000, danhMuc: 'Danh mục mới', ton: 3 }; s.themSanPham();
+assert.equal(s.sanPham.length, 7);
+assert.ok(s.danhMuc.includes('Danh mục mới'));
+assert.equal(s.tuKhoa, ''); assert.equal(s.danhMucLoc, '');
+assert.ok(s.thanhCong);
+s.moi = { ten: 'Tẩy', gia: '15000', danhMuc: 'Phụ kiện', ton: 2 }; s.themSanPham();
+assert.equal(s.sanPham.at(-1).gia, 15000, 'Giá nhập dạng văn bản được lưu thành số');
+s.moi = { ten: 'Thước', gia: '12xyz', danhMuc: 'Phụ kiện', ton: 1 }; s.themSanPham();
+assert.notEqual(s.sanPham.at(-1).ten, 'Thước', 'Giá không hợp lệ bị từ chối');
+s.moi = { ten: 'Thước mới', gia: '10000', danhMuc: '__moi__', danhMucMoi: 'Đồ dùng mới', ton: 1 }; s.themSanPham();
+assert.equal(s.sanPham.at(-1).danhMuc, 'Đồ dùng mới');
+assert.ok(s.danhMuc.includes('Đồ dùng mới'));
+for (const ton of ['', ' ', '-1', '1.5', 'abc']) {
+  const truoc = s.sanPham.length;
+  s.moi = { ten: 'Kiểm tra tồn', gia: '5000', danhMuc: 'Phụ kiện', ton };
+  s.themSanPham();
+  assert.equal(s.sanPham.length, truoc, 'Từ chối tồn kho không hợp lệ: ' + ton);
+  assert.equal(s.moi.gia, '5000', 'Không xóa dữ liệu khi thêm thất bại');
+}
+s.moi = { ten: 'Chấp nhận tồn bằng không', gia: '5000', danhMuc: 'Phụ kiện', ton: '' };
+s.moi.ton = '0'; s.themSanPham();
+assert.equal(s.sanPham.at(-1).ton, 0);
+const three = load('bai3.js'); const cart = three.data(); Object.assign(cart, three.methods);
+assert.equal(three.computed.tongSoLuong.call(cart), 5);
+assert.equal(three.computed.tongTien.call(cart), 46000);
+cart.doiSoLuong(1, 0); cart.doiSoLuong(1, 1.5); cart.doiSoLuong(1, 100); assert.equal(cart.gioHang[0].soLuong, 2);
+cart.doiSoLuong(1, 99); assert.equal(cart.gioHang[0].soLuong, 99);
+cart.xoaSanPham(1); cart.xoaSanPham(2); assert.equal(cart.gioHang.length, 0);
+console.log('Kiểm tra nghiệp vụ thành công');
