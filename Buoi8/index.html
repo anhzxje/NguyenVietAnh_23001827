@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Sản phẩm - PHP & Vue.js</title>
+    <!-- Nhúng thư viện Vue 3 qua CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <style>
+        :root { color-scheme: light; font-family: "Segoe UI", Arial, sans-serif; color: #1d3041; background: #edf3f5; }
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 36px 24px 64px; line-height: 1.5; }
+        button, input { font: inherit; }
+        button { cursor: pointer; }
+        button:focus-visible, input:focus-visible { outline: 3px solid #f1ae39; outline-offset: 3px; }
+        button:disabled { cursor: wait; opacity: .65; }
+        .container { max-width: 1320px; margin: auto; display: grid; grid-template-columns: minmax(270px, 340px) minmax(0, 1fr); gap: 24px; align-items: start; }
+        header { grid-column: 1 / -1; padding: 32px 36px; border-radius: 18px; background: #123e50; color: white; position: relative; overflow: hidden; }
+        header::after { content: ''; position: absolute; width: 200px; height: 200px; border: 34px solid rgba(255,255,255,.07); border-radius: 50%; right: 5%; top: -95px; pointer-events: none; }
+        header h1 { margin: 0 0 7px; font-size: clamp(1.7rem, 3vw, 2.35rem); letter-spacing: -.035em; line-height: 1.2; }
+        header p { margin: 0; color: #cce0e4; font-size: .95rem; }
+        .alert { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 18px; border-radius: 9px; }
+        .alert-success { background: #e0f4e9; color: #185b3a; }
+        .alert-danger { background: #fde9e6; color: #973323; }
+        .alert-close { background: transparent; border: 0; color: inherit; font-size: 1.5rem; line-height: 1; }
+        .card { min-width: 0; background: #fff; border: 1px solid #dbe6e9; border-radius: 14px; padding: 24px; box-shadow: 0 8px 24px rgba(22, 63, 76, .05); }
+        .card-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+        .card-title { margin: 0; font-size: 1.2rem; line-height: 1.3; letter-spacing: -.02em; }
+        .form-grid { display: grid; gap: 18px; }
+        .form-group { display: grid; gap: 7px; }
+        .form-group label { font-size: .9rem; font-weight: 600; }
+        .req { color: #b74837; }
+        .form-input { width: 100%; min-height: 46px; padding: 10px 12px; color: #1d3041; border: 1px solid #b9cbd1; border-radius: 7px; background: #fff; }
+        .form-input::placeholder { color: #758a92; }
+        .form-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+        .btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 9px 16px; border: 1px solid transparent; border-radius: 7px; font-weight: 600; transition: background-color .15s; }
+        .btn-primary { background: #087b79; color: white; flex: 1; }
+        .btn-primary:hover { background: #056461; }
+        .btn-secondary { background: #edf4f5; color: #27515e; border-color: #d2e1e4; }
+        .btn-secondary:hover { background: #dfedef; }
+        .btn-edit, .btn-delete { min-height: 40px; padding: 7px 12px; background: transparent; }
+        .btn-edit { color: #076d6b; border-color: #b4d9d5; }
+        .btn-edit:hover { background: #e7f5f3; }
+        .btn-delete { color: #ac4235; border-color: #eccbc6; }
+        .btn-delete:hover { background: #fff1ef; }
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+        th { padding: 13px 12px; background: #f3f7f8; color: #526c75; font-size: .8rem; font-weight: 600; }
+        td { padding: 16px 12px; border-bottom: 1px solid #e8eff1; font-size: .93rem; }
+        tbody tr:last-child td { border-bottom: 0; }
+        .text-center { text-align: center; }
+        .badge-stock, .badge-mode { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: .8rem; font-weight: 600; }
+        .badge-available, .badge-mode-add { background: #e2f4ef; color: #126c57; }
+        .badge-out-of-stock, .badge-mode-edit { background: #fff1dc; color: #805515; }
+        .action-buttons { display: flex; gap: 8px; }
+        .empty-state { padding: 40px 12px; color: #647d85; }
+        [v-cloak] { display: none; }
+        @media (max-width: 850px) { .container { grid-template-columns: 1fr; } header, .alert { grid-column: auto; } }
+        @media (max-width: 480px) { body { padding: 16px 12px 40px; } header { padding: 26px 22px; } .card { padding: 20px 16px; } .card-header { align-items: flex-start; } }
+        @media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+    </style>
+</head>
+<body>
+    <div id="app" class="container" v-cloak>
+        <!-- Tiêu đề -->
+        <header>
+            <h1>Quản lý sản phẩm</h1>
+            <p>Theo dõi sản phẩm và số lượng trong kho</p>
+        </header>
+
+        <!-- Thông báo người dùng (Success / Error) -->
+        <div v-if="notification.text" :class="['alert', notification.type === 'error' ? 'alert-danger' : 'alert-success']" role="alert">
+            <span>{{ notification.text }}</span>
+            <button class="alert-close" @click="notification.text = ''" aria-label="Đóng thông báo">&times;</button>
+        </div>
+
+        <!-- Biểu mẫu: Thêm / Sửa sản phẩm -->
+        <section class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    {{ isEditing ? 'Cập nhật sản phẩm' : 'Thêm sản phẩm' }}
+                </h2>
+                <span :class="['badge-mode', isEditing ? 'badge-mode-edit' : 'badge-mode-add']">
+                    {{ isEditing ? 'Đang sửa ID: ' + form.id : 'Chế độ: Thêm mới' }}
+                </span>
+            </div>
+
+            <!-- Câu 3.2 & 3.3: Dùng v-model liên kết dữ liệu, submit gửi POST (thêm) hoặc PUT (sửa) -->
+            <form @submit.prevent="saveProduct">
+                <div class="form-grid">
+                    <!-- Ô 1: Tên sản phẩm -->
+                    <div class="form-group">
+                        <label for="name">Tên sản phẩm <span class="req">*</span></label>
+                        <input
+                            id="name"
+                            ref="nameInput"
+                            v-model="form.name"
+                            type="text"
+                            class="form-input"
+                            placeholder="Nhập tên sản phẩm (1 - 100 ký tự)"
+                            required
+                        >
+                    </div>
+
+                    <!-- Ô 2: Đơn giá -->
+                    <div class="form-group">
+                        <label for="price">Đơn giá (đồng) <span class="req">*</span></label>
+                        <input
+                            id="price"
+                            v-model="form.price"
+                            type="number"
+                            step="1"
+                            min="1"
+                            class="form-input"
+                            placeholder="Nhập đơn giá (> 0)"
+                            required
+                        >
+                    </div>
+
+                    <!-- Ô 3: Số lượng tồn -->
+                    <div class="form-group">
+                        <label for="stock">Số lượng tồn <span class="req">*</span></label>
+                        <input
+                            id="stock"
+                            v-model="form.stock"
+                            type="number"
+                            step="1"
+                            min="0"
+                            class="form-input"
+                            placeholder="Nhập số lượng tồn (>= 0)"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button v-if="isEditing" type="button" class="btn btn-secondary" @click="cancelEdit">
+                        Hủy bỏ
+                    </button>
+                    <button type="submit" class="btn btn-primary" :disabled="submitting">
+                        {{ submitting ? 'Đang lưu...' : 'Lưu' }}
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Bảng hiển thị danh sách sản phẩm -->
+        <section class="card">
+            <div class="card-header">
+                <h2 class="card-title">Danh sách sản phẩm</h2>
+                <button class="btn btn-secondary" @click="fetchProducts" title="Tải lại danh sách">
+                    Làm mới
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 70px;" class="text-center">Mã ID</th>
+                            <th>Tên sản phẩm</th>
+                            <th>Đơn giá</th>
+                            <th class="text-center">Số lượng tồn</th>
+                            <th class="text-center" style="width: 150px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Câu 3.1: Dùng v-for để hiển thị bảng gồm tên sản phẩm, đơn giá, số lượng tồn và hai nút Sửa, Xóa -->
+                        <tr v-for="product in products" :key="product.id">
+                            <td class="text-center">#{{ product.id }}</td>
+                            <td><strong>{{ product.name }}</strong></td>
+                            <td>{{ formatCurrency(product.price) }}</td>
+                            <td class="text-center">
+                                <span :class="['badge-stock', product.stock > 0 ? 'badge-available' : 'badge-out-of-stock']">
+                                    {{ product.stock }} {{ product.stock === 0 ? '(Hết hàng)' : '' }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <div class="action-buttons" style="justify-content: center;">
+                                    <!-- Câu 3.3: Nút Sửa -->
+                                    <button
+                                        type="button"
+                                        class="btn btn-edit"
+                                        @click="startEdit(product)"
+                                    >
+                                        Sửa
+                                    </button>
+                                    <!-- Câu 3.4: Nút Xóa -->
+                                    <button
+                                        type="button"
+                                        class="btn btn-delete"
+                                        @click="deleteProduct(product)"
+                                    >
+                                        Xóa
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Trạng thái trống hoặc đang tải -->
+                        <tr v-if="products.length === 0 && !loading">
+                            <td colspan="5" class="empty-state">
+                                Chưa có sản phẩm nào trong kho dữ liệu.
+                            </td>
+                        </tr>
+                        <tr v-if="loading">
+                            <td colspan="5" class="empty-state">
+                                Đang tải danh sách sản phẩm từ máy chủ...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Script Vue 3 -->
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    // Đường dẫn tương đối tới RESTful API PHP
+                    apiUrl: 'api/products.php',
+
+                    // Danh sách sản phẩm hiển thị trên bảng
+                    products: [],
+
+                    // Biểu mẫu 3 ô liên kết bằng v-model
+                    form: {
+                        id: null,
+                        name: '',
+                        price: '',
+                        stock: ''
+                    },
+
+                    // Chế độ thao tác: false = Thêm mới, true = Cập nhật
+                    isEditing: false,
+
+                    // Trạng thái mạng
+                    loading: false,
+                    submitting: false,
+
+                    // Thông báo phản hồi giao diện
+                    notification: {
+                        text: '',
+                        type: 'success'
+                    },
+
+                    notifyTimer: null
+                };
+            },
+
+            mounted() {
+                // Câu 3.1: Khi mở trang, gọi API để lấy danh sách sản phẩm
+                this.fetchProducts();
+            },
+
+            methods: {
+                // Hiển thị thông báo trên giao diện và tự tắt sau 5s
+                showNotification(text, type = 'success') {
+                    this.notification.text = text;
+                    this.notification.type = type;
+
+                    if (this.notifyTimer) {
+                        clearTimeout(this.notifyTimer);
+                    }
+                    this.notifyTimer = setTimeout(() => {
+                        this.notification.text = '';
+                    }, 5000);
+                },
+
+                // Gọi API lấy danh sách sản phẩm (GET api/products.php)
+                async fetchProducts() {
+                    this.loading = true;
+                    try {
+                        const response = await fetch(this.apiUrl, {
+                            method: 'GET',
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        const result = await response.json();
+
+                        if (result.success && Array.isArray(result.data)) {
+                            this.products = result.data;
+                        } else {
+                            this.showNotification(result.message || 'Không thể tải danh sách sản phẩm.', 'error');
+                        }
+                    } catch (error) {
+                        this.showNotification('Không thể kết nối đến API backend: ' + error.message, 'error');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // Câu 3.2 & 3.3: Bấm Lưu ở chế độ thêm gửi POST, ở chế độ sửa gửi PUT
+                async saveProduct() {
+                    const payload = {
+                        name: typeof this.form.name === 'string' ? this.form.name.trim() : '',
+                        price: Number(this.form.price),
+                        stock: Number(this.form.stock)
+                    };
+
+                    this.submitting = true;
+
+                    try {
+                        let response;
+                        if (!this.isEditing) {
+                            // Chế độ thêm: gửi yêu cầu POST
+                            response = await fetch(this.apiUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify(payload)
+                            });
+                        } else {
+                            // Chế độ sửa: gửi yêu cầu PUT theo đúng mã sản phẩm
+                            const updateUrl = `${this.apiUrl}?id=${encodeURIComponent(this.form.id)}`;
+                            response = await fetch(updateUrl, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify(payload)
+                            });
+                        }
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            // Câu 3.5: Cập nhật bảng mà không tải lại trang
+                            this.showNotification(result.message || (this.isEditing ? 'Cập nhật thành công!' : 'Thêm mới thành công!'), 'success');
+                            this.resetForm();
+                            await this.fetchProducts();
+                        } else {
+                            // Câu 3.5: Nếu API trả lỗi, hiển thị thông báo trên giao diện
+                            this.showNotification(result.message || 'Thao tác không thành công.', 'error');
+                        }
+                    } catch (error) {
+                        this.showNotification('Lỗi kết nối máy chủ: ' + error.message, 'error');
+                    } finally {
+                        this.submitting = false;
+                    }
+                },
+
+                // Câu 3.3: Khi bấm Sửa, đưa dữ liệu của dòng được chọn lên biểu mẫu
+                startEdit(product) {
+                    this.isEditing = true;
+                    this.form = {
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        stock: product.stock
+                    };
+
+                    if (this.$refs.nameInput) {
+                        this.$nextTick(() => {
+                            this.$refs.nameInput.focus();
+                        });
+                    }
+                },
+
+                // Hủy chế độ sửa
+                cancelEdit() {
+                    this.resetForm();
+                },
+
+                // Đặt lại biểu mẫu về mặc định
+                resetForm() {
+                    this.isEditing = false;
+                    this.form = {
+                        id: null,
+                        name: '',
+                        price: '',
+                        stock: ''
+                    };
+                },
+
+                // Câu 3.4: Khi bấm Xóa, yêu cầu người dùng xác nhận
+                async deleteProduct(product) {
+                    const confirmMessage = `Bạn có chắc chắn muốn xóa sản phẩm "${product.name}" (Mã: #${product.id}) không?`;
+                    const confirmed = window.confirm(confirmMessage);
+
+                    // Chỉ gửi yêu cầu DELETE nếu người dùng đồng ý
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    try {
+                        const deleteUrl = `${this.apiUrl}?id=${encodeURIComponent(product.id)}`;
+                        const response = await fetch(deleteUrl, {
+                            method: 'DELETE',
+                            headers: { 'Accept': 'application/json' }
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            // Câu 3.5: Cập nhật lại danh sách không reload trang
+                            this.showNotification(result.message || 'Đã xóa sản phẩm thành công.', 'success');
+
+                            if (this.isEditing && this.form.id === product.id) {
+                                this.resetForm();
+                            }
+
+                            await this.fetchProducts();
+                        } else {
+                            // Câu 3.5: Nếu API trả lỗi, hiển thị thông báo trên giao diện
+                            this.showNotification(result.message || 'Xóa sản phẩm thất bại.', 'error');
+                        }
+                    } catch (error) {
+                        this.showNotification('Lỗi kết nối máy chủ khi xóa: ' + error.message, 'error');
+                    }
+                },
+
+                // Định dạng tiền tệ Việt Nam (VND)
+                formatCurrency(amount) {
+                    if (amount === undefined || amount === null || isNaN(amount)) {
+                        return '0 đ';
+                    }
+                    return new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
