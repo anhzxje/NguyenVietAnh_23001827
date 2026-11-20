@@ -1,0 +1,32 @@
+services:
+  web:
+    build: .
+    ports:
+      - "127.0.0.1:8009:8000"
+    environment:
+      DB_HOST: db
+      DB_NAME: buoi9_product_management
+      DB_USER: buoi9
+      DB_PASS: buoi9_local
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: buoi9_root_local
+      MYSQL_DATABASE: buoi9_product_management
+      MYSQL_USER: buoi9
+      MYSQL_PASSWORD: buoi9_local
+    volumes:
+      - buoi9_data:/var/lib/mysql
+      - ./database.sql:/docker-entrypoint-initdb.d/01-products.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "--silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+volumes:
+  buoi9_data:

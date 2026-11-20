@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
+    <title>Buổi 9 — Upload ảnh và phân trang sản phẩm</title>
+    <!-- Nhúng thư viện Vue 3 qua CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <style>
+        :root { color-scheme: light; font-family: "Segoe UI", Arial, sans-serif; color: #1d3041; background: #edf3f5; }
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 36px 24px 64px; line-height: 1.5; }
+        button, input { font: inherit; }
+        button { cursor: pointer; }
+        button:focus-visible, input:focus-visible { outline: 3px solid #f1ae39; outline-offset: 3px; }
+        button:disabled { cursor: not-allowed; opacity: .65; }
+        .container { max-width: 1320px; margin: auto; display: grid; grid-template-columns: minmax(270px, 340px) minmax(0, 1fr); gap: 24px; align-items: start; }
+        header { grid-column: 1 / -1; padding: 32px 36px; border-radius: 18px; background: #123e50; color: white; position: relative; overflow: hidden; }
+        header::after { content: ''; position: absolute; width: 200px; height: 200px; border: 34px solid rgba(255,255,255,.07); border-radius: 50%; right: 5%; top: -95px; pointer-events: none; }
+        header h1 { margin: 0 0 7px; font-size: clamp(1.7rem, 3vw, 2.35rem); letter-spacing: -.035em; line-height: 1.2; }
+        header p { margin: 0; color: #cce0e4; font-size: .95rem; }
+        .alert { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 18px; border-radius: 9px; }
+        .alert-success { background: #e0f4e9; color: #185b3a; }
+        .alert-danger { background: #fde9e6; color: #973323; }
+        .alert-close { background: transparent; border: 0; color: inherit; font-size: 1.5rem; line-height: 1; }
+        .card { min-width: 0; background: #fff; border: 1px solid #dbe6e9; border-radius: 14px; padding: 24px; box-shadow: 0 8px 24px rgba(22, 63, 76, .05); }
+        .card-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+        .card-title { margin: 0; font-size: 1.2rem; line-height: 1.3; letter-spacing: -.02em; }
+        .form-grid { display: grid; gap: 18px; }
+        .form-group { display: grid; gap: 7px; }
+        .form-group label { font-size: .9rem; font-weight: 600; }
+        .req { color: #b74837; }
+        .form-input { width: 100%; min-height: 46px; padding: 10px 12px; color: #1d3041; border: 1px solid #b9cbd1; border-radius: 7px; background: #fff; }
+        .form-input::placeholder { color: #758a92; }
+        .form-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+        .btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 9px 16px; border: 1px solid transparent; border-radius: 7px; font-weight: 600; transition: background-color .15s; }
+        .btn-primary { background: #087b79; color: white; flex: 1; }
+        .btn-primary:hover { background: #056461; }
+        .btn-secondary { background: #edf4f5; color: #27515e; border-color: #d2e1e4; }
+        .btn-secondary:hover { background: #dfedef; }
+        .btn-edit, .btn-delete { min-height: 40px; padding: 7px 12px; background: transparent; }
+        .btn-edit { color: #076d6b; border-color: #b4d9d5; }
+        .btn-edit:hover { background: #e7f5f3; }
+        .btn-delete { color: #ac4235; border-color: #eccbc6; }
+        .btn-delete:hover { background: #fff1ef; }
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+        th { padding: 13px 12px; background: #f3f7f8; color: #526c75; font-size: .8rem; font-weight: 600; }
+        td { padding: 16px 12px; border-bottom: 1px solid #e8eff1; font-size: .93rem; }
+        tbody tr:last-child td { border-bottom: 0; }
+        .text-center { text-align: center; }
+        .badge-stock, .badge-mode { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: .8rem; font-weight: 600; }
+        .badge-available, .badge-mode-add { background: #e2f4ef; color: #126c57; }
+        .badge-out-of-stock, .badge-mode-edit { background: #fff1dc; color: #805515; }
+        .action-buttons { display: flex; gap: 8px; }
+        .empty-state { padding: 40px 12px; color: #647d85; }
+        .thumbnail { display: block; width: 64px; height: 64px; object-fit: contain; border: 1px solid #dbe6e9; border-radius: 8px; background: #f3f7f8; }
+        .preview { width: 100%; height: 160px; object-fit: contain; border: 1px solid #dbe6e9; border-radius: 8px; }
+        .help { margin: 0; color: #526c75; font-size: .85rem; }
+        .field-error { margin: 0; color: #973323; font-size: .9rem; }
+        .pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #dbe6e9; padding-top: 18px; margin-top: 16px; }
+        fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+        [v-cloak] { display: none; }
+        @media (max-width: 850px) { .container { grid-template-columns: 1fr; } header, .alert { grid-column: auto; } }
+        @media (max-width: 480px) { body { padding: 16px 12px 40px; } header { padding: 26px 22px; } .card { padding: 20px 16px; } .card-header { align-items: flex-start; } }
+        @media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+    </style>
+</head>
+<body>
+    <div id="app" class="container" v-cloak>
+        <!-- Tiêu đề -->
+        <header>
+            <h1>Quản lý sản phẩm</h1>
+            <p>Buổi 9 · Upload ảnh và phân trang sản phẩm · Nguyễn Việt Anh — 23001827</p>
+        </header>
+
+        <!-- Thông báo người dùng (Success / Error) -->
+        <div v-if="notification.text" :class="['alert', notification.type === 'error' ? 'alert-danger' : 'alert-success']" role="alert">
+            <span>{{ notification.text }}</span>
+            <button class="alert-close" @click="notification.text = ''" aria-label="Đóng thông báo">&times;</button>
+        </div>
+
+        <!-- Biểu mẫu: Thêm / Sửa sản phẩm -->
+        <section class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    {{ isEditing ? 'Cập nhật sản phẩm' : 'Thêm sản phẩm' }}
+                </h2>
+                <span :class="['badge-mode', isEditing ? 'badge-mode-edit' : 'badge-mode-add']">
+                    {{ isEditing ? 'Đang sửa ID: ' + form.id : 'Chế độ: Thêm mới' }}
+                </span>
+            </div>
+
+            <!-- Câu 3.2 & 3.3: Dùng v-model liên kết dữ liệu, submit gửi POST (thêm) hoặc PUT (sửa) -->
+            <form @submit.prevent="saveProduct">
+                <fieldset :disabled="submitting">
+                <div class="form-grid">
+                    <!-- Ô 1: Tên sản phẩm -->
+                    <div class="form-group">
+                        <label for="name">Tên sản phẩm <span class="req">*</span></label>
+                        <input
+                            id="name"
+                            ref="nameInput"
+                            v-model="form.name"
+                            type="text"
+                            class="form-input"
+                            placeholder="Nhập tên sản phẩm (1 - 100 ký tự)"
+                            required
+                        >
+                    </div>
+
+                    <!-- Ô 2: Đơn giá -->
+                    <div class="form-group">
+                        <label for="price">Đơn giá (đồng) <span class="req">*</span></label>
+                        <input
+                            id="price"
+                            v-model="form.price"
+                            type="number"
+                            step="1"
+                            min="1"
+                            class="form-input"
+                            placeholder="Nhập đơn giá (> 0)"
+                            required
+                        >
+                    </div>
+
+                    <!-- Ô 3: Số lượng tồn -->
+                    <div class="form-group">
+                        <label for="stock">Số lượng tồn <span class="req">*</span></label>
+                        <input
+                            id="stock"
+                            v-model="form.stock"
+                            type="number"
+                            step="1"
+                            min="0"
+                            class="form-input"
+                            placeholder="Nhập số lượng tồn (>= 0)"
+                            required
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="image">Ảnh sản phẩm (không bắt buộc)</label>
+                        <input id="image" ref="imageInput" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                            class="form-input" @change="selectImage" aria-describedby="image-help image-error" :aria-invalid="Boolean(imageError)">
+                        <p id="image-help" class="help">Một ảnh JPG, JPEG hoặc PNG, tối đa 2 MB. Không chọn ảnh mới để giữ ảnh hiện tại.</p>
+                        <p id="image-error" class="field-error" role="alert">{{ imageError }}</p>
+                        <img v-if="previewUrl" :src="previewUrl" class="preview" alt="Xem trước ảnh sản phẩm">
+                    </div>
+                </div>
+                <div v-if="uploadError" class="form-group" role="alert">
+                    <p class="field-error">Thông tin đã lưu. {{ uploadError }}</p>
+                    <button type="button" class="btn btn-secondary" @click="retryUpload" :disabled="!selectedImage || Boolean(imageError)">Thử lại upload ảnh</button>
+                </div>
+                <div class="form-actions">
+                    <button v-if="isEditing" type="button" class="btn btn-secondary" @click="cancelEdit">
+                        Hủy bỏ
+                    </button>
+                    <button type="submit" class="btn btn-primary" :disabled="submitting || Boolean(imageError)">
+                        {{ submitting ? 'Đang lưu...' : 'Lưu' }}
+                    </button>
+                </div>
+                </fieldset>
+            </form>
+        </section>
+
+        <!-- Bảng hiển thị danh sách sản phẩm -->
+        <section class="card">
+            <div class="card-header">
+                <h2 class="card-title">Danh sách sản phẩm</h2>
+                <button class="btn btn-secondary" @click="fetchProducts(pagination.page)" :disabled="loading || submitting" title="Tải lại danh sách">
+                    Làm mới
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 70px;" class="text-center">Mã ID</th>
+                            <th>Ảnh</th>
+                            <th>Tên sản phẩm</th>
+                            <th>Đơn giá</th>
+                            <th class="text-center">Số lượng tồn</th>
+                            <th class="text-center" style="width: 150px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Câu 3.1: Dùng v-for để hiển thị bảng gồm tên sản phẩm, đơn giá, số lượng tồn và hai nút Sửa, Xóa -->
+                        <tr v-for="product in products" :key="product.id">
+                            <td class="text-center">#{{ product.id }}</td>
+                            <td><img v-if="product.image" :src="product.image" :alt="'Ảnh ' + product.name" class="thumbnail"><span v-else class="help">Chưa có ảnh</span></td>
+                            <td><strong>{{ product.name }}</strong></td>
+                            <td>{{ formatCurrency(product.price) }}</td>
+                            <td class="text-center">
+                                <span :class="['badge-stock', product.stock > 0 ? 'badge-available' : 'badge-out-of-stock']">
+                                    {{ product.stock }} {{ product.stock === 0 ? '(Hết hàng)' : '' }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <div class="action-buttons" style="justify-content: center;">
+                                    <!-- Câu 3.3: Nút Sửa -->
+                                    <button
+                                        type="button"
+                                        class="btn btn-edit"
+                                        @click="startEdit(product)" :disabled="loading || submitting"
+                                    >
+                                        Sửa
+                                    </button>
+                                    <!-- Câu 3.4: Nút Xóa -->
+                                    <button
+                                        type="button"
+                                        class="btn btn-delete"
+                                        @click="deleteProduct(product)" :disabled="loading || submitting"
+                                    >
+                                        Xóa
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Trạng thái trống hoặc đang tải -->
+                        <tr v-if="products.length === 0 && !loading">
+                            <td colspan="6" class="empty-state">
+                                Chưa có sản phẩm
+                            </td>
+                        </tr>
+                        <tr v-if="loading">
+                            <td colspan="6" class="empty-state">
+                                Đang tải danh sách sản phẩm từ máy chủ...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <nav class="pagination" aria-label="Phân trang sản phẩm">
+                <button type="button" class="btn btn-secondary" @click="fetchProducts(pagination.page - 1)" :disabled="loading || submitting || pagination.page <= 1">Trước</button>
+                <span aria-live="polite">Trang {{ pagination.page }} / {{ pagination.total_pages }} — Tổng {{ pagination.total }} sản phẩm</span>
+                <button type="button" class="btn btn-secondary" @click="fetchProducts(pagination.page + 1)" :disabled="loading || submitting || pagination.page >= pagination.total_pages">Sau</button>
+            </nav>
+        </section>
+    </div>
+
+    <!-- Script Vue 3 -->
+    <script src="app.js"></script>
+</body>
+</html>
